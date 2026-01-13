@@ -1,0 +1,9 @@
+
+version: 2
+
+sources:
+  - name: public
+    database: valenbisi
+    schema: public
+    tables:
+      - name: valenbisi_raw

@@ -1,0 +1,72 @@
+# Valenbisi Data Pipeline - Walkthrough
+
+¡Bienvenido a tu nueva pipeline de datos para Valenbisi! Este proyecto automatiza la recolección, almacenamiento, transformación y visualización de datos de bicicletas públicas en Valencia.
+
+## 🏗️ Arquitectura del Sistema
+
+El sistema está compuesto por 6 servicios Docker interconectados:
+
+1.  **Collector**: Script Python que consulta la API de Valenbisi cada 5 minutos.
+2.  **PostgreSQL**: Base de datos relacional para almacenamiento histórico seguro y robusto.
+3.  **MongoDB**: Base de datos NoSQL para almacenamiento flexible y series temporales.
+4.  **DBT (Data Build Tool)**: Realiza transformaciones de datos (limpieza, agregaciones por hora/día).
+5.  **Dashboard (Streamlit)**: Interfaz web interactiva para visualizar los datos.
+6.  **Mongo Express**: Interfaz web para administrar MongoDB.
+
+## 🚀 Cómo Ejecutar el Proyecto
+
+Todo el sistema está contenerizado con Docker Compose.
+
+1.  **Iniciar el sisteama**:
+    Abre una terminal en la carpeta del proyecto y ejecuta:
+    ```bash
+    docker compose up -d
+    ```
+    *(La primera vez puede tardar unos minutos en construir las imágenes)*
+
+2.  **Verificar estado**:
+    ```bash
+    docker compose ps
+    ```
+    Todos los servicios deberían estar en estado `Up` (y PostgreSQL `healthy`).
+
+## 🌐 Servicios Disponibles
+
+Una vez iniciado, puedes acceder a las siguientes interfaces:
+
+### 📊 Dashboard de Datos
+- **URL**: [http://localhost:8501](http://localhost:8501)
+- **Qué verás**: Mapa en tiempo real, KPIs globales, gráficos de tendencias horarias.
+
+### 🍃 Administración MongoDB (Mongo Express)
+- **URL**: [http://localhost:8081](http://localhost:8081)
+- **Credenciales**: admin / pass (o las configuradas en docker-compose)
+- **Uso**: Explora las colecciones `latest_status` y `station_status`.
+
+### 🐘 Base de Datos PostgreSQL
+- **Host**: localhost
+- **Puerto**: 5432
+- **Usuario/Pass**: postgres / postgres
+- **Base de datos**: valenbisi
+
+## 🛠️ Desarrollo y Mantenimiento
+
+### Ejecutar transformaciones DBT manualmente
+Si quieres forzar una actualización de las tablas agregadas:
+```bash
+docker compose run --rm dbt dbt run --profiles-dir .
+```
+
+### Ver logs del colector
+Para ver si está recolectando datos correctamente:
+```bash
+docker compose logs -f collector
+```
+
+## 📂 Estructura del Proyecto
+
+- `/collector`: Código del script de recolección Python.
+- `/valenbisi_dbt`: Proyecto DBT con modelos SQL.
+- `/dashboard`: Código de la aplicación Streamlit.
+- `docker-compose.yml`: Orquestator de todos los servicios.
+- `init_db.sql` / `mongo_init.js`: Scripts de inicialización de bases de datos.

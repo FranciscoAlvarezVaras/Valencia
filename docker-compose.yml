@@ -1,0 +1,88 @@
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: valenbisi
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - valenbisi_data:/var/lib/postgresql/data
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d valenbisi"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  collector:
+    build:
+      context: .
+      dockerfile: dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=valenbisi
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+    restart: unless-stopped
+
+  dbt:
+    build:
+      context: .
+      dockerfile: Dockerfile.dbt
+    depends_on:
+      postgres:
+        condition: service_healthy
+    working_dir: /app
+    volumes:
+      - ./valenbisi_dbt:/app
+    stdin_open: true
+    tty: true
+
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    ports:
+      - "8501:8501"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=valenbisi
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: examplepassword
+    volumes:
+      - mongo_data:/data/db
+      - ./mongo_init.js:/docker-entrypoint-initdb.d/mongo_init.js:ro
+
+  mongo-express:
+    image: mongo-express
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: examplepassword
+      ME_CONFIG_MONGODB_URL: mongodb://root:examplepassword@mongo:27017/
+    depends_on:
+      - mongo
+
+volumes:
+  valenbisi_data:
+  mongo_data:
